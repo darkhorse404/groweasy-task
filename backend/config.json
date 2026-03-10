@@ -2,6 +2,7 @@
   "businessName": "GrowEasy Realty Group",
   "industry": "Real Estate",
   "agentName": "GrowEasy AI",
+  "location":"Pune",
   "qualificationCriteria": {
     "budget": {
       "label": "Budget Range",

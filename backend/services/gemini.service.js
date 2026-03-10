@@ -14,34 +14,52 @@ const ai = new GoogleGenAI({
 function buildSystemInstruction(overrides = {}) {
   const biz = { ...config, ...overrides };
 
-  const locationText = biz.location ? ` in ${biz.location}` : '';
+  // 1. Safely Handle Location Routing
+  // Only add the routing block if a root location is explicitly provided
+  let routingBlock = '';
+  if (biz.location) {
+    routingBlock = `\n## LOCATION & BRANCH ROUTING\nOur primary service location is: ${biz.location}.\n- If the user requires services/properties outside ${biz.location}, politely inform them you will note their details and have the regional branch reach out.\n- After informing them of the transfer, proceed to END THE CONVERSATION.`;
+  }
+
+  // 2. Handle Rules & Conversation Style
+  const customTone = biz.conversationStyle ? `\n- Tone: ${biz.conversationStyle.tone}` : '';
   const rulesText = biz.rules 
-    ? `\n## STRICT BEHAVIORAL RULES\n${biz.rules}` 
-    : `\n## YOUR PERSONALITY\n${DEFAULT_RULES}`;
+    ? `\n## STRICT BEHAVIORAL RULES\n${biz.rules}${customTone}` 
+    : `\n## STRICT BEHAVIORAL RULES\n${DEFAULT_RULES}${customTone}`;
 
-  const questionsText = biz.qualifyingQuestions && biz.qualifyingQuestions.length > 0
-    ? `\n## YOUR QUALIFICATION GOAL\nYou must gather information to answer the following qualifying questions:\n${biz.qualifyingQuestions.map((q, i) => `${i + 1}. ${q}`).join('\n')}`
-    : `\n## YOUR QUALIFICATION GOAL\nGather the following information naturally — do NOT ask all questions at once:\n${getSectorQuestions(biz.industry).map((q, i) => `${i + 1}. ${q}`).join('\n')}`;
+  // 3. Handle Questions (from overrides, config, or constants)
+  let questionsText = '';
+  if (biz.qualifyingQuestions && biz.qualifyingQuestions.length > 0) {
+    questionsText = biz.qualifyingQuestions.map((q, i) => `${i + 1}. ${q}`).join('\n');
+  } else {
+    questionsText = getSectorQuestions(biz.industry).map((q, i) => `${i + 1}. ${q}`).join('\n');
+  }
 
-  return `You are ${biz.agentName}, a highly professional and empathetic human sales assistant representing ${biz.businessName}, operating in the ${ biz.industry} sector.
+  // 4. Inject specific Target Criteria from config.json
+  // This tells the LLM EXACTLY what budget ranges and timelines to look for.
+  let criteriaContext = '';
+  if (biz.qualificationCriteria) {
+    criteriaContext = `\n## TARGET CRITERIA OPTIONS\nWhen asking questions, try to map their answers to these available options:\n`;
+    for (const [key, val] of Object.entries(biz.qualificationCriteria)) {
+      if (val.options) {
+        criteriaContext += `- ${val.label}: ${val.options.join(', ')}\n`;
+      }
+    }
+  }
+
+  return `You are ${biz.agentName}, a highly professional and empathetic human sales assistant representing ${biz.businessName}, operating in the ${biz.industry} sector.
 
 ## YOUR OBJECTIVE
-Have a natural, friendly, WhatsApp-style text conversation to qualify the lead. You must gently gather information to answer the following qualifying questions:
+Have a natural, friendly, WhatsApp-style text conversation to qualify the lead. You must gently gather information to answer these questions:
 ${questionsText}
-
-## LOCATION & BRANCH ROUTING
-Our primary service location is: ${locationText}.
-- If the user requires physical services, properties, or investments outside this location, politely inform them that while you are based in ${locationText}, you will note their details and have the respective regional branch reach out to them.
-- Once you tell them they will be transferred to another branch, consider the qualification complete and proceed to END THE CONVERSATION.
-    
-Your ONLY job is to qualify leads through a friendly WhatsApp-style conversation.
-
-## CONVERSATION RULES
-- Ask ONE question at a time. Wait for the answer before asking the next.
-- If a response is unclear or off-topic, gently ask for clarification ONCE.
-- Keep the conversation focused and short.
-- When you have collected all required information or if the user is clearly disqualified, output ONLY the exact phrase "<END_CONVERSATION>" in the ai_message field. Do NOT say goodbye or wrap up — just output the trigger phrase.
+${criteriaContext}${routingBlock}
 ${rulesText}
+
+## CONVERSATION FLOW RULES
+- Ask ONE question at a time. Wait for the answer before asking the next.
+- Do NOT list out all the options to the user like a robot. Just ask the question naturally.
+- If a response is unclear or off-topic, gently ask for clarification ONCE.
+- When you have collected all required information or if the user is clearly disqualified/unresponsive, output ONLY the exact phrase "<END_CONVERSATION>" in the ai_message field. Do NOT say goodbye or wrap up.
 
 ## CONTEXT
 ${biz.hotLeadConditions ? biz.hotLeadConditions.description : ''}
@@ -61,10 +79,6 @@ function formatHistory(messages) {
 
 /**
  * Sends a message to the Gemini API with a 10s timeout using AbortController.
- * Returns an object with the ai message and suggested replies.
- * @param {Array} messages - Full conversation history [{role, content}].
- * @param {object} configOverrides - Optional overrides.
- * @returns {Promise<{ ai_message: string, suggested_user_replies: string[] }>}
  */
 async function generateChatResponse(messages, configOverrides = {}) {
   const systemInstruction = buildSystemInstruction(configOverrides);
@@ -77,7 +91,7 @@ async function generateChatResponse(messages, configOverrides = {}) {
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3.1-flash-lite-preview',
+      model: 'gemini-3.1-flash-lite-preview', 
       contents: [
         ...geminiHistory,
         { role: 'user', parts: [{ text: latestMessage }] }
@@ -86,6 +100,7 @@ async function generateChatResponse(messages, configOverrides = {}) {
         systemInstruction: systemInstruction,
         temperature: 0.7,
         responseMimeType: 'application/json',
+        abortSignal: controller.signal, // Crucial for the timeout to work
         responseSchema: {
           type: Type.OBJECT,
           properties: {
@@ -96,7 +111,7 @@ async function generateChatResponse(messages, configOverrides = {}) {
             suggested_user_replies: { 
               type: Type.ARRAY, 
               items: { type: Type.STRING },
-              description: "2-3 short, clickable strings predicting what the user might say next based on the AI's question to speed up the conversation."
+              description: "2-3 short, clickable strings predicting what the user might say next."
             }
           },
           required: ["ai_message", "suggested_user_replies"]
@@ -105,7 +120,14 @@ async function generateChatResponse(messages, configOverrides = {}) {
     });
 
     clearTimeout(timeoutId);
-    return JSON.parse(response.text);
+    
+    // Clean up markdown block if API returns it
+    let rawText = response.text.trim();
+    if (rawText.startsWith('```json')) {
+      rawText = rawText.replace(/^```json\n/, '').replace(/\n```$/, '');
+    }
+    return JSON.parse(rawText);
+
   } catch (error) {
     clearTimeout(timeoutId);
     if (error.name === 'AbortError') {

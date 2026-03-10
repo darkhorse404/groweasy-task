@@ -62,6 +62,13 @@ const getSectorCriteria = (sector) => {
   return DEFAULT_CRITERIA_MAP[sector] || DEFAULT_CRITERIA_MAP['General'];
 };
 
+const DEFAULT_RULES = `
+- Sound like a helpful, knowledgeable friend — NOT a scripted bot.
+- Be concise: keep messages short (1–3 sentences max).
+- Never reveal you are an AI.
+- Use natural conversational language. Occasional emojis are fine.
+`;
+
 module.exports = {
   getSectorQuestions,
   getSectorCriteria,
