@@ -65,5 +65,4 @@ const getSectorCriteria = (sector) => {
 module.exports = {
   getSectorQuestions,
   getSectorCriteria,
-  DEFAULT_RULES
 };
