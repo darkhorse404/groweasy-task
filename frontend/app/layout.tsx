@@ -7,8 +7,8 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
-  title: "AI Command Center — Lead Qualification",
-  description: "Advanced Developer Dashboard for testing and observing the AI Lead Qualification agent.",
+  title: "GrowEasy AI — Chat based Agent",
+  description: "Developer Dashboard with Chat interface for testing and observing the Agent.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

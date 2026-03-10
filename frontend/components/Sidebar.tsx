@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { TerminalSquare, LayoutDashboard, Menu, X } from 'lucide-react';
+import Image from 'next/image';
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -52,7 +53,12 @@ export default function Sidebar() {
 
         {/* Logo mark */}
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-light to-primary-dark flex items-center justify-center text-white text-xl font-extrabold shadow-[0_4px_12px_rgba(34,94,87,0.4)]">
-          🚀
+          <img
+      src="logo.png" // Path starting from the public directory
+      alt="Company Logo"
+      width={50} // Desired rendering width
+      height={50} // Desired rendering height
+    />
         </div>
 
         <nav className="flex flex-col gap-4 mt-5 w-full px-2">

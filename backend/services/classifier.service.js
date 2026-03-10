@@ -1,4 +1,5 @@
 const { GoogleGenAI, Type } = require('@google/genai');
+const { getSectorCriteria } = require('../constants');
 
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
@@ -24,9 +25,10 @@ const ai = new GoogleGenAI({
  *
  * @param {Array}  history     - Full conversation history [{role, content}, ...]
  * @param {string} invalidReason - Optional explicit reason if flagged before natural end
+ * @param {string} industry      - The business industry for specialized context
  * @returns {Promise<object>}
  */
-async function classifyLead(history, invalidReason = null) {
+async function classifyLead(history, invalidReason = null, industry = 'General') {
   const conversationText = history
     .map((m) => `${m.role === 'user' ? 'Lead' : 'Agent'}: ${m.content}`)
     .join('\n');
@@ -69,16 +71,19 @@ async function classifyLead(history, invalidReason = null) {
   };
 
   try {
+    const criteria = getSectorCriteria(industry);
     const response = await ai.models.generateContent({
       model: 'gemini-3.1-flash-lite-preview',
       contents: classificationPrompt,
       config: {
-        systemInstruction: `You are a lead qualification analyst for a Real Estate company. Analyze the conversation between a sales agent and a lead, and classify it based on the criteria.
+        systemInstruction: `You are a lead qualification analyst for a ${industry} company. Analyze the conversation between a sales agent and a lead, and classify it based on the criteria.
 
 ## Classification Rules
-- **Hot**: Clear budget of ₹30L+, purchase timeline within 6 months, specific property type in mind.
-- **Cold**: Vague answers, "just exploring", timeline > 1 year, very low or unclear budget.
-- **Invalid**: Gibberish responses, refused to engage, clearly not a genuine prospect.`,
+- **Hot**: ${criteria.hot}
+- **Cold**: ${criteria.cold}
+- **Invalid**: ${criteria.invalid}
+
+If the transcript ends with a SYSTEM NOTE stating the user abandoned the chat, classify the Lead Status as 'Cold' immediately.`,
         temperature: 0.2, // Low temp for extraction tasks
         responseMimeType: 'application/json',
         responseSchema: responseSchema,

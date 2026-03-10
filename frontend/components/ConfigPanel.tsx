@@ -11,18 +11,7 @@ interface ConfigPanelProps {
   turnCount: number;
 }
 
-const DEFAULT_CONFIG: BusinessConfig = {
-  businessName: 'Prestige Realty Group',
-  agentName: 'Priya',
-  industry: 'Real Estate',
-  location: 'Pune',
-  qualifyingQuestions: [
-    "What is your budget for the property?",
-    "Are you looking for 2BHK or 3BHK?",
-    "When are you planning to move in?"
-  ],
-  rules: "Be polite. Do not reveal you are an AI. Always try to ask the qualifying questions naturally."
-};
+import { DEFAULT_CONFIG } from '../lib/constants';
 
 export default function ConfigPanel({
   onStart, conversationState,
@@ -114,7 +103,7 @@ export default function ConfigPanel({
               <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Lead Name</label>
               <input 
                 type="text" value={leadName} onChange={e => setLeadName(e.target.value)} 
-                disabled={isActive} placeholder="Rohit" 
+                disabled={isActive} placeholder="Rohit Sharma" 
                 className={`w-full px-3 py-2 rounded-md border text-[13px] outline-none transition-colors ${isActive ? 'bg-slate-50 border-slate-200 text-slate-800' : 'bg-white border-slate-200 text-slate-900 focus:border-primary'}`} 
               />
             </div>
@@ -133,7 +122,7 @@ export default function ConfigPanel({
               value={initialMsg} onChange={e => setInitialMsg(e.target.value)} 
               disabled={isActive} rows={2} 
               className={`w-full px-3 py-2 rounded-md border text-[13px] outline-none resize-none transition-colors ${isActive ? 'bg-slate-50 border-slate-200 text-slate-800' : 'bg-white border-slate-200 text-slate-900 focus:border-primary'}`} 
-              placeholder="Looking for a flat..." 
+              placeholder="Hi, I’m interested in buying a property..." 
             />
           </div>
         </section>

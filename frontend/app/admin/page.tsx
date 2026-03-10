@@ -41,7 +41,7 @@ export default function AdminInsights() {
           <h2 className="text-base font-bold text-slate-800 mb-4">Lead Qualification Log</h2>
           {sessions.length === 0 ? (
             <div className="p-10 md:p-12 text-center bg-white rounded-xl border border-dashed border-slate-300">
-              <p className="text-slate-400 font-semibold text-sm">No leads tested yet. Run a session in the Test Environment first.</p>
+              <p className="text-slate-400 font-semibold text-sm">No leads tested yet. Run a session in the Workspace Environment first.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-4 w-full">

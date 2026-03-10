@@ -1,14 +1,15 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import ConfigPanel from '../components/ConfigPanel';
 import ChatPanel from '../components/ChatPanel';
 import MessageInput from '../components/MessageInput';
 import ResultsPanel from '../components/ResultsPanel';
 import ErrorModal from '../components/ErrorModal';
-import { startConversation, sendMessage } from '../lib/api';
+import { startConversation, sendMessage, classifySession } from '../lib/api';
 import { saveCompletedSession } from '../lib/storage';
-import type { Message, LeadInfo, BusinessConfig, Classification, ConversationState } from '../types';
+import { UI_TEXT } from '../lib/constants';
+import type { Message, LeadInfo, BusinessConfig, Classification, ConversationState, CompletedResponse } from '../types';
 import { Settings, MessageCircle, Activity } from 'lucide-react';
 
 function generateId() {
@@ -21,7 +22,7 @@ export default function Home() {
   const [conversationState, setConversationState] = useState<ConversationState>('idle');
   const [sessionId, setSessionId] = useState<string>('');
   const [turnCount, setTurnCount] = useState(0);
-  const [agentName, setAgentName] = useState('Priya');
+  const [agentName, setAgentName] = useState('GrowEasy AI');
   const [classification, setClassification] = useState<Classification | null>(null);
   
   // Modal Error State
@@ -40,6 +41,51 @@ export default function Home() {
     setMessages((prev) => [...prev, msg]);
     return msg;
   }, []);
+
+  const timeoutRef = useRef<NodeJS.Timeout| null>(null);
+  const timeoutMs = parseInt(process.env.NEXT_PUBLIC_INACTIVITY_TIMEOUT_MS || '15000', 10);
+
+  const clearInactivityTimer = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+  }, []);
+
+  const handleInactivity = useCallback(async () => {
+    if (conversationState !== 'active') return;
+
+    appendMessage('assistant', "Chat ended due to inactivity.");
+    setConversationState('ended');
+    setIsTyping(true); // Show typing while we get classification
+
+    try {
+      const response = await classifySession(sessionId, 'Inactivity') as CompletedResponse;
+      setClassification(response.result);
+      setMobileTab('results');
+      if (activeLeadInfo && activeConfig) {
+        saveCompletedSession(sessionId, activeLeadInfo, activeConfig, response.result);
+      }
+    } catch (err: any) {
+      setErrorModal('Failed to finalize session on inactivity: ' + (err.message || 'Unknown error'));
+    } finally {
+      setIsTyping(false);
+    }
+  }, [sessionId, conversationState, activeLeadInfo, activeConfig, appendMessage]);
+
+  const resetInactivityTimer = useCallback(() => {
+    clearInactivityTimer();
+    if (conversationState === 'active' && !isTyping) {
+      timeoutRef.current = setTimeout(() => {
+        handleInactivity();
+      }, timeoutMs);
+    }
+  }, [conversationState, isTyping, timeoutMs, clearInactivityTimer, handleInactivity]);
+
+  useEffect(() => {
+    resetInactivityTimer();
+    return () => clearInactivityTimer();
+  }, [conversationState, isTyping, messages, resetInactivityTimer, clearInactivityTimer]);
 
   const handleStart = async (leadInfo: LeadInfo, config: BusinessConfig) => {
     const newSessionId = generateId();
@@ -136,10 +182,10 @@ export default function Home() {
         <div className="flex items-center">
           <div>
             <p className="text-slate-900 font-extrabold text-base leading-none ">
-              Workspace Environment
+              {UI_TEXT.headerTitle}
             </p>
             <p className="text-slate-400 text-[11px] mt-0.5 font-semibold">
-              Build & Simulate AI Dialogs
+              {UI_TEXT.headerSubtitle}
             </p>
           </div>
         </div>

@@ -16,7 +16,8 @@ const MAX_CLARIFICATIONS = config.conversationStyle?.clarificationAttempts || 1;
 // ─── Helper: Evaluate classification async ─────────────────────────────────────
 async function evaluateSession(session, invalidReason = null) {
   try {
-    session.classification = await classifyLead(session.history, invalidReason);
+    const industry = session.configOverrides?.industry || config.industry || 'General';
+    session.classification = await classifyLead(session.history, invalidReason, industry);
   } catch (err) {
     session.classification = {
       status: invalidReason ? 'Invalid' : 'Cold',
@@ -188,6 +189,42 @@ router.post('/send', async (req, res) => {
 
   } catch (err) {
     console.error('❌ /api/chat/send error:', err);
+    return res.status(500).json({ error: err.message || 'Internal server error' });
+  }
+});
+
+// ─── 3. POST /api/chat/classify ────────────────────────────────────────────────
+/**
+ * Force ends and classifies a session (e.g., for inactivity or manual stop)
+ * Body: { sessionId: string, reason: string }
+ */
+router.post('/classify', async (req, res) => {
+  try {
+    const { sessionId, reason } = req.body;
+    const session = sessions[sessionId];
+
+    if (!session) {
+      return res.status(404).json({ error: 'Session not found.' });
+    }
+
+    if (session.isEnded && session.classification) {
+      return res.json({ result: session.classification });
+    }
+
+    session.isEnded = true;
+    
+    if (reason === 'Inactivity') {
+      session.history.push({ role: 'user', content: '[SYSTEM NOTE: User abandoned chat.]' });
+    }
+
+    await evaluateSession(session, reason || 'Manual termination');
+
+    return res.json({
+      status: 'completed',
+      result: session.classification,
+    });
+  } catch (err) {
+    console.error('❌ /api/chat/classify error:', err);
     return res.status(500).json({ error: err.message || 'Internal server error' });
   }
 });

@@ -1,5 +1,6 @@
 const { GoogleGenAI, Type } = require('@google/genai');
 const config = require('../config.json');
+const { getSectorQuestions, DEFAULT_RULES } = require('../constants');
 
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
@@ -16,11 +17,11 @@ function buildSystemInstruction(overrides = {}) {
   const locationText = biz.location ? ` in ${biz.location}` : '';
   const rulesText = biz.rules 
     ? `\n## STRICT BEHAVIORAL RULES\n${biz.rules}` 
-    : `\n## YOUR PERSONALITY\n- Sound like a helpful, knowledgeable friend — NOT a scripted bot.\n- Be concise: keep messages short (1–3 sentences max).\n- Never reveal you are an AI.\n- Use natural conversational language. Occasional emojis are fine.`;
+    : `\n## YOUR PERSONALITY\n${DEFAULT_RULES}`;
 
   const questionsText = biz.qualifyingQuestions && biz.qualifyingQuestions.length > 0
     ? `\n## YOUR QUALIFICATION GOAL\nYou must gather information to answer the following qualifying questions:\n${biz.qualifyingQuestions.map((q, i) => `${i + 1}. ${q}`).join('\n')}`
-    : `\n## YOUR QUALIFICATION GOAL\nGather the following information naturally — do NOT ask all questions at once:\n1. **Budget**: What is their budget range?\n2. **Timeline**: When are they looking to buy?\n3. **Property Type**: What kind of property?\n4. **Location**: Any preferred area or locality?\n5. **Purpose**: Is it for self-use or investment?`;
+    : `\n## YOUR QUALIFICATION GOAL\nGather the following information naturally — do NOT ask all questions at once:\n${getSectorQuestions(biz.industry).map((q, i) => `${i + 1}. ${q}`).join('\n')}`;
 
   return `You are ${biz.agentName}, a highly professional and empathetic human sales assistant representing ${biz.businessName}, operating in the ${ biz.industry} sector.
 

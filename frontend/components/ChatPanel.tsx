@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { Bot } from 'lucide-react';
 import type { Message } from '../types';
+import { UI_TEXT } from '../lib/constants';
 
 interface ChatPanelProps {
   messages: Message[];
@@ -43,7 +44,7 @@ export default function ChatPanel({ messages, isTyping, agentName }: ChatPanelPr
           <div className="flex-1 flex flex-col items-center justify-center gap-4 opacity-60">
             <Bot size={48} className="text-primary" />
             <p className="text-primary-dark font-semibold text-sm max-w-[280px] text-center">
-              Initialize the conversation to test the AI Agent&apos;s qualification logic.
+              {UI_TEXT.chatPlaceholderText}
             </p>
           </div>
         )}
