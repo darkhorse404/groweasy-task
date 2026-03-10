@@ -1,0 +1,43 @@
+{
+  "businessName": "Prestige Realty Group",
+  "industry": "Real Estate",
+  "agentName": "Priya",
+  "qualificationCriteria": {
+    "budget": {
+      "label": "Budget Range",
+      "options": ["Under ₹30L", "₹30L – ₹60L", "₹60L – ₹1Cr", "₹1Cr – ₹2Cr", "Above ₹2Cr"],
+      "minimumQualifyingOption": "₹30L – ₹60L"
+    },
+    "timeline": {
+      "label": "Purchase Timeline",
+      "options": ["Immediately (0–3 months)", "Short-term (3–6 months)", "Medium-term (6–12 months)", "Long-term (1+ years)", "Just exploring"],
+      "hotTimelines": ["Immediately (0–3 months)", "Short-term (3–6 months)"]
+    },
+    "propertyType": {
+      "label": "Property Type of Interest",
+      "options": ["1 BHK Apartment", "2 BHK Apartment", "3 BHK Apartment", "Villa / Independent House", "Commercial Property", "Plot / Land"]
+    },
+    "location": {
+      "label": "Preferred Locality",
+      "placeholder": "e.g., Whitefield, Koramangala, Baner"
+    },
+    "purpose": {
+      "label": "Purpose of Purchase",
+      "options": ["Self-use / End-use", "Investment", "Both"]
+    }
+  },
+  "hotLeadConditions": {
+    "description": "A lead is HOT if they have a clear budget of ₹30L+, a timeline of within 6 months, and are looking for self-use or investment with a specific property type in mind."
+  },
+  "coldLeadConditions": {
+    "description": "A lead is COLD if they are just exploring, have vague answers, a very long timeline (1+ years), or a budget that is unclear or very low."
+  },
+  "invalidLeadConditions": {
+    "description": "A lead is INVALID if they consistently respond with gibberish, refuse to engage, are abusive, or are clearly not genuinely interested after two attempts to clarify."
+  },
+  "conversationStyle": {
+    "tone": "Warm, professional, empathetic, and concise. Like a helpful friend who works in real estate.",
+    "maxTurns": 10,
+    "clarificationAttempts": 1
+  }
+}
