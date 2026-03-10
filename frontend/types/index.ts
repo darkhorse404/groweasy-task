@@ -20,6 +20,9 @@ export interface BusinessConfig {
   businessName: string;
   agentName: string;
   industry: string;
+  location?: string;
+  qualifyingQuestions?: string[];
+  rules?: string;
 }
 
 export interface ExtractedMetadata {

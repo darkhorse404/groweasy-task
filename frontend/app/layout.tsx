@@ -13,10 +13,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" style={{ height: "100%" }}>
-      <body className={`${inter.variable} ${jetbrainsMono.variable} antialiased`} style={{ height: "100%", margin: 0, display: 'flex' }}>
+    <html lang="en" className="h-full">
+      <body className={`${inter.variable} ${jetbrainsMono.variable} antialiased flex h-full m-0`}>
         <Sidebar />
-        <main style={{ flex: 1, height: '100%', overflow: 'hidden' }}>
+        <main className="flex-1 h-full overflow-hidden relative min-w-0">
           {children}
         </main>
       </body>

@@ -5,9 +5,11 @@ import ConfigPanel from '../components/ConfigPanel';
 import ChatPanel from '../components/ChatPanel';
 import MessageInput from '../components/MessageInput';
 import ResultsPanel from '../components/ResultsPanel';
+import ErrorModal from '../components/ErrorModal';
 import { startConversation, sendMessage } from '../lib/api';
 import { saveCompletedSession } from '../lib/storage';
 import type { Message, LeadInfo, BusinessConfig, Classification, ConversationState } from '../types';
+import { Settings, MessageCircle, Activity } from 'lucide-react';
 
 function generateId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -21,13 +23,17 @@ export default function Home() {
   const [turnCount, setTurnCount] = useState(0);
   const [agentName, setAgentName] = useState('Priya');
   const [classification, setClassification] = useState<Classification | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  
+  // Modal Error State
+  const [errorModal, setErrorModal] = useState<string | null>(null);
   
   const [suggestedReplies, setSuggestedReplies] = useState<string[]>([]);
   
-  // Track active payload to save history at the end
   const [activeLeadInfo, setActiveLeadInfo] = useState<LeadInfo | null>(null);
   const [activeConfig, setActiveConfig] = useState<BusinessConfig | null>(null);
+
+  // Mobile Tab State ('config', 'chat', 'results')
+  const [mobileTab, setMobileTab] = useState<'config' | 'chat' | 'results'>('chat');
 
   const appendMessage = useCallback((role: Message['role'], content: string): Message => {
     const msg: Message = { id: generateId(), role, content, timestamp: new Date() };
@@ -41,13 +47,16 @@ export default function Home() {
     setMessages([]);
     setTurnCount(0);
     setClassification(null);
-    setError(null);
+    setErrorModal(null);
     setSuggestedReplies([]);
     setActiveLeadInfo(leadInfo);
     setActiveConfig(config);
     setConversationState('active');
     setAgentName(config.agentName);
     setIsTyping(true);
+    
+    // Auto-switch to chat on mobile
+    setMobileTab('chat');
 
     try {
       const initialReq = initialMessageOrGreeting(leadInfo);
@@ -62,7 +71,7 @@ export default function Home() {
     } catch (err: any) {
       setIsTyping(false);
       setConversationState('idle');
-      setError(err.response?.data?.error || err.message || 'Failed to connect.');
+      setErrorModal(err.response?.data?.error || err.message || 'Failed to connect to AI server.');
     }
   };
 
@@ -73,11 +82,11 @@ export default function Home() {
 
   const handleSend = async (text: string) => {
     if (conversationState !== 'active' || isTyping) return;
-    setError(null);
+    setErrorModal(null);
 
     appendMessage('user', text);
     setIsTyping(true);
-    setSuggestedReplies([]); // clear fast
+    setSuggestedReplies([]);
 
     try {
       const response = await sendMessage(sessionId, text);
@@ -91,14 +100,16 @@ export default function Home() {
         setConversationState('ended');
         setClassification(response.result);
         
-        // Save to Admin History / Session Storage
+        // Auto-switch to results tab on mobile
+        setMobileTab('results');
+        
         if (activeLeadInfo && activeConfig) {
           saveCompletedSession(sessionId, activeLeadInfo, activeConfig, response.result);
         }
       }
     } catch (err: any) {
       setIsTyping(false);
-      setError(err.response?.data?.error || err.message || 'Error communicating with agent.');
+      setErrorModal(err.response?.data?.error || err.message || 'Failed to send message.');
     }
   };
 
@@ -109,61 +120,84 @@ export default function Home() {
     setConversationState('idle');
     setIsTyping(false);
     setClassification(null);
-    setError(null);
+    setErrorModal(null);
     setSuggestedReplies([]);
     setActiveLeadInfo(null);
     setActiveConfig(null);
   }, []);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', background: 'var(--bg-app)' }}>
+    <div className="flex flex-col h-[100dvh] overflow-hidden bg-slate-50 relative w-full">
+      {/* ── Error Modal ── */}
+      {errorModal && <ErrorModal message={errorModal} onClose={() => setErrorModal(null)} />}
+
       {/* ── Top App Bar ── */}
-      <header style={{
-        background: '#fff', padding: '0 24px', height: '56px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        borderBottom: '1px solid var(--border)', flexShrink: 0, zIndex: 10,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <header className="bg-white md:px-6 h-14 flex items-center justify-between border-b border-slate-200 shrink-0 z-10 w-full relative pr-16 md:pr-6">
+        <div className="flex items-center">
           <div>
-            <p style={{ color: 'var(--text-dark)', fontWeight: 800, fontSize: '16px', lineHeight: 1 }}>
-              Test Environment
+            <p className="text-slate-900 font-extrabold text-base leading-none ">
+              Workspace Environment
             </p>
-            <p style={{ color: 'var(--text-light)', fontSize: '11px', marginTop: '2px', fontWeight: 600 }}>
+            <p className="text-slate-400 text-[11px] mt-0.5 font-semibold">
               Build & Simulate AI Dialogs
             </p>
           </div>
         </div>
         {sessionId && (
-          <div className="mono-font" style={{ fontSize: '11px', color: 'var(--primary-light)', background: 'var(--green-50)', padding: '4px 8px', borderRadius: '4px' }}>
+          <div className="hidden md:block mono-font text-[11px] text-primary bg-primary/10 px-2.5 py-1 rounded-md">
             SESSION_ID: {sessionId.slice(0, 8)}
           </div>
         )}
       </header>
 
-      {/* ── Main 3 Column Content ── */}
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+      {/* ── Mobile Tab Navigation ── */}
+      <div className="md:hidden flex border-b border-slate-200 bg-white shrink-0">
+        <button 
+          onClick={() => setMobileTab('config')}
+          className={`flex-1 flex justify-center items-center gap-2 py-3 text-xs font-bold border-b-2 transition-colors ${mobileTab === 'config' ? 'border-primary text-primary-dark bg-primary/5' : 'border-transparent text-slate-500'}`}
+        >
+          <Settings size={16} /> Config
+        </button>
+        <button 
+          onClick={() => setMobileTab('chat')}
+          className={`flex-1 flex justify-center items-center gap-2 py-3 text-xs font-bold border-b-2 transition-colors ${mobileTab === 'chat' ? 'border-primary text-primary-dark bg-primary/5' : 'border-transparent text-slate-500'}`}
+        >
+          <MessageCircle size={16} /> Chat {conversationState === 'active' && <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />}
+        </button>
+        <button 
+          onClick={() => setMobileTab('results')}
+          className={`flex-1 flex justify-center items-center gap-2 py-3 text-xs font-bold border-b-2 transition-colors ${mobileTab === 'results' ? 'border-primary text-primary-dark bg-primary/5' : 'border-transparent text-slate-500'}`}
+        >
+          <Activity size={16} /> Results {classification && <span className="w-2 h-2 rounded-full bg-hot" />}
+        </button>
+      </div>
 
-        {/* 1. Left Panel (Input / JSON Toggle) */}
-        <ConfigPanel
-          onStart={handleStart}
-          onReset={handleReset}
-          conversationState={conversationState}
-          turnCount={turnCount}
-        />
+      {/* ── Main Responsive Content ── */}
+      <div className="flex-1 flex overflow-hidden w-full relative">
 
-        {/* 2. Center Panel: Chat + Input */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          {error && (
-            <div style={{
-              background: '#fef2f2', borderBottom: '1px solid #fecaca', padding: '10px 20px',
-              color: '#dc2626', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px', zIndex: 20
-            }}>
-              ⚠️ {error}
-            </div>
-          )}
+        {/* 1. Left Panel (Config) */}
+        <div className={`
+          ${mobileTab === 'config' ? 'flex' : 'hidden'} 
+          md:flex flex-col h-full w-full md:w-[380px] md:min-w-[320px] 
+          border-r border-slate-200 bg-white shrink-0 overflow-y-auto
+        `}>
+          <div className="-mx-[0px] h-full">
+            <ConfigPanel
+              onStart={handleStart}
+              onReset={handleReset}
+              conversationState={conversationState}
+              turnCount={turnCount}
+            />
+          </div>
+        </div>
 
+        {/* 2. Center Panel (Chat) */}
+        <div className={`
+          ${mobileTab === 'chat' ? 'flex' : 'hidden'} 
+          md:flex flex-col flex-1 h-full min-w-0 overflow-hidden bg-slate-50 relative
+        `}>
           <ChatPanel messages={messages} isTyping={isTyping} agentName={agentName} />
-
+          
           <MessageInput
             onSend={handleSend}
             isTyping={isTyping}
@@ -172,8 +206,16 @@ export default function Home() {
           />
         </div>
 
-        {/* 3. Right Panel: Live JSON Metadata Results */}
-        <ResultsPanel classification={classification} conversationState={conversationState} />
+        {/* 3. Right Panel (Results) */}
+        <div className={`
+          ${mobileTab === 'results' ? 'flex' : 'hidden'} 
+          md:flex flex-col h-full w-full md:w-[380px] md:min-w-[340px] 
+          border-l border-slate-200 bg-white shrink-0 overflow-y-auto
+        `}>
+          <div className="-mx-[0px] h-full">
+            <ResultsPanel classification={classification} conversationState={conversationState} />
+          </div>
+        </div>
         
       </div>
     </div>

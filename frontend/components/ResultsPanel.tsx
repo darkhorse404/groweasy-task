@@ -1,7 +1,7 @@
 'use client';
 
 import { Activity, Braces, Tag } from 'lucide-react';
-import type { Classification, ConversationState } from '../../types';
+import type { Classification, ConversationState } from '../types';
 
 interface ResultsPanelProps {
   classification: Classification | null;
@@ -14,92 +14,79 @@ export default function ResultsPanel({ classification, conversationState }: Resu
   const isEnded = conversationState === 'ended';
 
   return (
-    <aside style={{
-      width: '380px', minWidth: '340px',
-      background: 'var(--bg-panel)', borderLeft: '1px solid var(--border)',
-      display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto'
-    }}>
+    <aside className="w-full h-full flex flex-col bg-white overflow-y-auto">
       {/* ── Header ── */}
-      <div style={{
-        background: 'linear-gradient(135deg, var(--green-700), var(--green-900))',
-        padding: '24px 20px 20px', color: '#fff',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+      <div className="bg-gradient-to-br from-primary to-primary-dark p-5 pt-6 text-white shrink-0">
+        <div className="flex items-center gap-2 mb-1">
           <Activity size={20} />
-          <span style={{ fontWeight: 700, fontSize: '16px', letterSpacing: '0.02em' }}>
+          <span className="font-bold text-base tracking-wide">
             Live Results Engine
           </span>
         </div>
-        <p style={{ fontSize: '12px', opacity: 0.75, marginTop: '4px' }}>
+        <p className="text-xs text-white/75 mt-1">
           Final classification and extracted metadata dump.
         </p>
       </div>
 
-      <div style={{ padding: '24px', flex: 1, display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div className="p-6 flex flex-col gap-6 flex-1 h-full">
         
         {isIdle && (
-          <div style={{ textAlign: 'center', opacity: 0.6, marginTop: '40px' }}>
-            <Braces size={40} color="var(--primary-light)" style={{ margin: '0 auto 12px' }} />
-            <p style={{ fontSize: '14px', fontWeight: 600 }}>Awaiting chat session.</p>
+          <div className="text-center opacity-60 mt-10">
+            <Braces size={40} className="text-primary-light mx-auto mb-3" />
+            <p className="text-sm font-semibold text-slate-700">Awaiting chat session.</p>
           </div>
         )}
 
         {isActive && !isEnded && (
-          <div className="animate-pulse" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-             <p style={{ fontSize: '13px', color: 'var(--primary-light)', fontWeight: 600 }}>Analyzing telemetry...</p>
-             <div style={{ height: '10px', background: 'var(--border)', borderRadius: '4px', width: '80%' }} />
-             <div style={{ height: '10px', background: 'var(--border)', borderRadius: '4px', width: '60%' }} />
-             <div style={{ height: '10px', background: 'var(--border)', borderRadius: '4px', width: '90%' }} />
+          <div className="animate-pulse flex flex-col gap-4 mt-2">
+             <p className="text-[13px] text-primary font-bold tracking-wide uppercase">Analyzing telemetry...</p>
+             <div className="h-2.5 bg-slate-200 rounded w-4/5" />
+             <div className="h-2.5 bg-slate-200 rounded w-3/5" />
+             <div className="h-2.5 bg-slate-200 rounded w-11/12" />
           </div>
         )}
 
         {isEnded && classification && (
-          <div className="animate-fade-up">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-              <span style={{
-                background: classification.status === 'Hot' ? '#fef2f2' : classification.status === 'Cold' ? '#f1f5f9' : '#fef3c7',
-                color: classification.status === 'Hot' ? 'var(--hot)' : classification.status === 'Cold' ? 'var(--cold)' : 'var(--invalid)',
-                padding: '4px 12px', borderRadius: '16px', fontWeight: 800, fontSize: '13px',
-                border: `1px solid ${classification.status === 'Hot' ? '#fecaca' : classification.status === 'Cold' ? '#cbd5e1' : '#fde68a'}`
-              }}>
+          <div className="animate-fade-up flex flex-col h-full">
+            <div className="flex items-center gap-2.5 mb-4">
+              <span className={`
+                px-3 py-1 rounded-full font-extrabold text-[13px] border
+                ${classification.status === 'Hot' ? 'bg-hot/10 text-hot border-hot/20' : 
+                  classification.status === 'Cold' ? 'bg-cold/10 text-cold border-cold/20' : 
+                  'bg-invalid/10 text-invalid border-invalid/20'}
+              `}>
                 {classification.status.toUpperCase()}
               </span>
-              <span style={{ fontSize: '12px', color: 'var(--text-mid)', fontWeight: 600 }}>
+              <span className="text-xs text-slate-500 font-semibold">
                 Confidence: {classification.confidence}
               </span>
             </div>
 
-            <p style={{ fontSize: '14px', color: 'var(--text-dark)', lineHeight: 1.5, marginBottom: '24px' }}>
+            <p className="text-sm text-slate-800 leading-relaxed mb-6">
               {classification.summary}
             </p>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '14px' }}>
-              <Tag size={14} color="var(--primary)" />
-              <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--primary-dark)', textTransform: 'uppercase' }}>
+            <div className="flex items-center gap-1.5 mb-3.5">
+              <Tag size={14} className="text-primary" />
+              <span className="text-xs font-bold text-primary-dark uppercase tracking-widest">
                 Extracted Metadata
               </span>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div className="flex flex-col gap-2 shrink-0">
               {Object.entries(classification.extractedMetadata).map(([key, val]) => (
-                <div key={key} style={{
-                  display: 'flex', justifyContent: 'space-between', padding: '10px 14px',
-                  background: 'var(--bg-app)', border: '1px solid var(--border)', borderRadius: '8px'
-                }}>
-                  <span style={{ fontSize: '12px', color: 'var(--text-mid)', fontWeight: 600 }}>{key}</span>
-                  <span className="mono-font" style={{ fontSize: '12px', color: val ? 'var(--primary-dark)' : 'var(--text-light)', fontWeight: 600 }}>
+                <div key={key} className="flex justify-between items-center px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg">
+                  <span className="text-xs text-slate-500 font-semibold">{key}</span>
+                  <span className={`mono-font text-xs font-semibold ${val ? 'text-primary-dark' : 'text-slate-400'}`}>
                     {val || 'null'}
                   </span>
                 </div>
               ))}
             </div>
 
-            <div style={{ marginTop: '24px' }}>
-              <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-light)', marginBottom: '8px', display: 'block' }}>RAW JSON PAYLOAD</span>
-              <pre className="mono-font" style={{
-                padding: '16px', background: '#1e293b', color: '#10b981',
-                borderRadius: '8px', fontSize: '11px', overflowX: 'auto'
-              }}>
+            <div className="mt-6 flex flex-col flex-1 min-h-0">
+              <span className="text-[11px] font-bold text-slate-400 mb-2 uppercase block shrink-0">RAW JSON PAYLOAD</span>
+              <pre className="mono-font flex-1 p-4 bg-slate-800 text-emerald-400 rounded-lg text-[11px] overflow-auto shadow-inner m-0 min-h-[150px]">
                 {JSON.stringify(classification, null, 2)}
               </pre>
             </div>

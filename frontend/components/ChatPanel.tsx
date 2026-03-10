@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { Bot } from 'lucide-react';
-import type { Message } from '../../types';
+import type { Message } from '../types';
 
 interface ChatPanelProps {
   messages: Message[];
@@ -18,40 +18,31 @@ export default function ChatPanel({ messages, isTyping, agentName }: ChatPanelPr
   }, [messages, isTyping]);
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+    <div className="flex-1 flex flex-col h-full overflow-hidden">
       {/* ── Chat Header ── */}
-      <div style={{
-        background: '#fff', borderBottom: '1px solid var(--border)',
-        padding: '16px 24px', display: 'flex', alignItems: 'center', gap: '14px',
-        boxShadow: '0 1px 2px rgba(0,0,0,0.02)', zIndex: 10, flexShrink: 0,
-      }}>
-        <div style={{
-          width: '44px', height: '44px', borderRadius: '50%',
-          background: 'var(--green-50)', color: 'var(--primary-light)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: 'inset 0 0 0 1px var(--green-200)',
-        }}>
+      <div className="bg-white border-b border-slate-200 px-6 py-4 flex items-center gap-3.5 shadow-sm z-10 shrink-0">
+        <div className="w-11 h-11 rounded-full bg-primary/10 text-primary flex items-center justify-center shadow-[inset_0_0_0_1px_rgba(43,122,113,0.5)]">
           <Bot size={22} />
         </div>
         <div>
-          <p style={{ color: 'var(--text-dark)', fontWeight: 700, fontSize: '16px', lineHeight: 1.2 }}>
-            {agentName} <span style={{ marginLeft: '4px', fontSize: '10px', padding: '2px 6px', background: 'var(--green-100)', color: 'var(--primary-dark)', borderRadius: '12px', fontWeight: 700 }}>AI AGENT</span>
+          <p className="text-slate-900 font-bold text-base leading-snug flex items-center">
+            {agentName}
+            <span className="ml-2 text-[10px] px-1.5 py-0.5 bg-primary/20 text-primary-dark rounded-full font-bold">
+              AI AGENT
+            </span>
           </p>
-          <p style={{ color: 'var(--text-light)', fontSize: '12px', marginTop: '3px', fontWeight: 500 }}>
-            {isTyping ? <span style={{ color: 'var(--primary)' }}>Thinking...</span> : 'Ready to receive leads'}
+          <p className="text-slate-500 text-xs mt-0.5 font-medium">
+            {isTyping ? <span className="text-primary">Thinking...</span> : 'Ready to receive leads'}
           </p>
         </div>
       </div>
 
       {/* ── Message Feed ── */}
-      <div style={{
-        flex: 1, overflowY: 'auto', background: 'var(--bg-chat)', padding: '24px',
-        display: 'flex', flexDirection: 'column', gap: '12px',
-      }}>
+      <div className="flex-1 overflow-y-auto bg-slate-100 p-6 flex flex-col gap-3">
         {messages.length === 0 && (
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px', opacity: 0.6 }}>
-            <Bot size={48} color="var(--primary)" />
-            <p style={{ color: 'var(--primary-dark)', fontWeight: 600, fontSize: '14px', maxWidth: '280px', textAlign: 'center' }}>
+          <div className="flex-1 flex flex-col items-center justify-center gap-4 opacity-60">
+            <Bot size={48} className="text-primary" />
+            <p className="text-primary-dark font-semibold text-sm max-w-[280px] text-center">
               Initialize the conversation to test the AI Agent&apos;s qualification logic.
             </p>
           </div>
@@ -72,22 +63,13 @@ function MessageBubble({ message }: { message: Message }) {
   const isAI = message.role === 'assistant';
 
   return (
-    <div className={isAI ? 'animate-slide-in-left' : 'animate-slide-in-right'} style={{ display: 'flex', justifyContent: isAI ? 'flex-start' : 'flex-end', marginBottom: '4px' }}>
-      <div style={{
-        maxWidth: '70%', padding: '12px 16px',
-        borderRadius: isAI ? '4px 16px 16px 16px' : '16px 4px 16px 16px',
-        background: isAI ? 'var(--bubble-ai)' : 'var(--bubble-user)',
-        color: isAI ? '#fff' : 'var(--text-dark)',
-        fontSize: '14px', lineHeight: '1.5',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.04)',
-        border: isAI ? 'none' : '1px solid var(--border)',
-        wordBreak: 'break-word',
-      }}>
+    <div className={`flex mb-1 ${isAI ? 'justify-start animate-slide-in-left' : 'justify-end animate-slide-in-right'}`}>
+      <div className={`
+        max-w-[70%] px-4 py-3 text-sm leading-relaxed shadow-sm break-words
+        ${isAI ? 'rounded-[4px_16px_16px_16px] bg-primary text-white border-none' : 'rounded-[16px_4px_16px_16px] bg-white text-slate-900 border border-slate-200'}
+      `}>
         {message.content}
-        <span style={{
-          display: 'block', fontSize: '10px', marginTop: '6px', textAlign: 'right', fontWeight: 600,
-          color: isAI ? 'rgba(255,255,255,0.7)' : 'var(--text-light)',
-        }}>
+        <span className={`block text-[10px] mt-1.5 text-right font-semibold ${isAI ? 'text-white/70' : 'text-slate-400'}`}>
           {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </span>
       </div>
@@ -97,12 +79,8 @@ function MessageBubble({ message }: { message: Message }) {
 
 function TypingIndicator() {
   return (
-    <div className="animate-fade-up" style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '8px' }}>
-      <div style={{
-        padding: '14px 18px', borderRadius: '4px 16px 16px 16px',
-        background: 'var(--bubble-ai)', display: 'flex', gap: '5px', alignItems: 'center',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.06)',
-      }}>
+    <div className="flex justify-start mb-2 animate-fade-up">
+      <div className="px-4.5 py-3.5 rounded-[4px_16px_16px_16px] bg-primary flex gap-1.5 items-center shadow-sm">
         <span className="typing-dot" />
         <span className="typing-dot" />
         <span className="typing-dot" />

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Send } from 'lucide-react';
-import type { ConversationState } from '../../types';
+import type { ConversationState } from '../types';
 
 interface MessageInputProps {
   onSend: (message: string) => void;
@@ -41,33 +41,16 @@ export default function MessageInput({
       : 'Type a message…';
 
   return (
-    <div style={{ flexShrink: 0, borderTop: '1px solid var(--border)', background: '#fff' }}>
+    <div className="shrink-0 border-t border-slate-200 bg-white">
       
-      {/* ── Suggested Replies ──────────────────────────────────────── */}
+      {/* ── Suggested Replies ── */}
       {suggestedReplies.length > 0 && conversationState === 'active' && !isTyping && (
-        <div className="animate-fade-up" style={{
-          display: 'flex', gap: '8px', padding: '12px 16px',
-          overflowX: 'auto', background: '#f8fafc',
-          borderBottom: '1px solid var(--border)'
-        }}>
+        <div className="animate-fade-up flex gap-2 py-3 px-4 overflow-x-auto bg-slate-50 border-b border-slate-200 scrollbar-hide">
           {suggestedReplies.map((reply, idx) => (
             <button
               key={idx}
               onClick={() => onSend(reply)}
-              style={{
-                padding: '6px 14px',
-                borderRadius: '20px',
-                border: '1px solid var(--primary-light)',
-                background: 'var(--green-50)',
-                color: 'var(--primary-dark)',
-                fontSize: '13px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-                transition: 'all 0.2s ease',
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.background = 'var(--green-100)'}
-              onMouseLeave={(e) => e.currentTarget.style.background = 'var(--green-50)'}
+              className="px-3.5 py-1.5 rounded-full border border-primary-light/30 bg-primary/10 text-primary-dark text-[13px] font-semibold cursor-pointer whitespace-nowrap transition-colors hover:bg-primary/20"
             >
               {reply}
             </button>
@@ -75,11 +58,8 @@ export default function MessageInput({
         </div>
       )}
 
-      {/* ── Input Box ──────────────────────────────────────────────── */}
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: '10px',
-        padding: '12px 16px', background: '#f8fafc',
-      }}>
+      {/* ── Input Box ── */}
+      <div className="flex items-center gap-2.5 p-3 sm:px-4 bg-slate-50">
         <input
           type="text"
           value={text}
@@ -87,30 +67,23 @@ export default function MessageInput({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={conversationState !== 'active' || isTyping}
-          style={{
-            flex: 1, padding: '11px 16px', borderRadius: '24px',
-            border: '1px solid var(--border)', fontSize: '14px',
-            background: conversationState === 'active' && !isTyping ? '#fff' : '#f1f5f9',
-            outline: 'none', transition: 'all 0.2s',
-            boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.02)',
-          }}
-          onFocus={(e) => e.target.style.borderColor = 'var(--primary-light)'}
-          onBlur={(e) => e.target.style.borderColor = 'var(--border)'}
+          className={`
+            flex-1 px-4 py-2.5 rounded-full border text-sm outline-none transition-all shadow-inner
+            ${conversationState === 'active' && !isTyping ? 'bg-white border-slate-200 focus:border-primary' : 'bg-slate-100 border-slate-200 text-slate-500'}
+          `}
         />
         <button
           onClick={handleSend}
           disabled={!canSend}
-          style={{
-            width: '44px', height: '44px', borderRadius: '50%', border: 'none',
-            cursor: canSend ? 'pointer' : 'not-allowed',
-            background: canSend ? 'linear-gradient(135deg, var(--primary), var(--primary-dark))' : '#cbd5e1',
-            color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            transition: 'all 0.2s ease',
-            transform: canSend ? 'scale(1)' : 'scale(0.95)',
-            boxShadow: canSend ? '0 4px 10px rgba(34, 94, 87, 0.3)' : 'none',
-          }}
+          className={`
+            w-11 h-11 rounded-full border-none flex items-center justify-center transition-all duration-200
+            ${canSend 
+              ? 'cursor-pointer bg-gradient-to-br from-primary to-primary-dark text-white transform scale-100 shadow-[0_4px_10px_rgba(34,94,87,0.3)] hover:scale-105' 
+              : 'cursor-not-allowed bg-slate-300 text-white transform scale-95 shadow-none'
+            }
+          `}
         >
-          <Send size={18} />
+          <Send size={18} className={canSend ? 'translate-x-[-1px]' : ''} />
         </button>
       </div>
     </div>

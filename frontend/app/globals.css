@@ -1,94 +1,52 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-/* ─── Design Tokens ───────────────────────────────────────────────────────────── */
+/* ─── Restore all your raw CSS variables ──────────────────────────────────────── */
 :root {
-  /* Developer/Technical Greens */
-  --green-50:  #f0fdfa;
-  --green-100: #ccfbf1;
-  --green-200: #99f6e4;
-  --green-500: #14b8a6;
-  --green-600: #0d9488;
-  --green-700: #0f766e;
-  --green-800: #115e59;
-  --green-900: #134e4a;
+  --color-primary: #225e57;
+  --color-primary-light: #2b7a71;
+  --color-primary-dark: #173f3a;
+
+  --color-hot: #ef4444;
+  --color-cold: #64748b;
+  --color-invalid: #f59e0b;
   
-  /* Primary Base from 2ndto.md */
-  --primary:   #225e57;
-  --primary-light: #2b7a71;
-  --primary-dark: #173f3a;
-
-  /* UI */
-  --bg-app:    #f8fafc;
-  --bg-panel:  #ffffff;
-  --bg-chat:   #f1f5f9;   
-  --border:    #e2e8f0;
-  --text-dark: #0f172a;
-  --text-mid:  #475569;
-  --text-light:#94a3b8;
-
-  /* Bubbles */
-  --bubble-ai:   var(--primary); 
-  --bubble-user: #ffffff;  
-
-  /* Status chips */
-  --hot:    #ef4444;
-  --cold:   #64748b;
-  --invalid:#f59e0b;
+  --color-bg-app: #f8fafc;
+  --color-bg-panel: #ffffff;
+  --color-bg-chat: #f1f5f9;
 }
 
-/* ─── Reset & Base ────────────────────────────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  html, body, #__next { height: 100%; }
 
-html, body, #__next { height: 100%; }
-
-body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background: var(--bg-app);
-  color: var(--text-dark);
-  -webkit-font-smoothing: antialiased;
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--color-bg-app);
+    color: #0f172a;
+    -webkit-font-smoothing: antialiased;
+  }
 }
 
-.mono-font {
-  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', Courier, monospace;
+@layer utilities {
+  /* ─── Restore your custom mono-font class ───────────────────────────────────── */
+  .mono-font {
+    font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', Courier, monospace;
+  }
 }
 
 /* ─── Scrollbar ───────────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
-::-webkit-scrollbar-thumb:hover { background: var(--text-light); }
-
-/* ─── Chat bubble animations ─────────────────────────────────────────────────── */
-@keyframes slideInLeft {
-  from { opacity: 0; transform: translateX(-12px); }
-  to   { opacity: 1; transform: translateX(0); }
-}
-@keyframes slideInRight {
-  from { opacity: 0; transform: translateX(12px); }
-  to   { opacity: 1; transform: translateX(0); }
-}
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-@keyframes typingBounce {
-  0%, 80%, 100% { transform: translateY(0); opacity: 0.5; }
-  40%           { transform: translateY(-6px); opacity: 1; }
-}
-@keyframes skeletonPulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
-.animate-slide-in-left  { animation: slideInLeft  0.25s ease both; }
-.animate-slide-in-right { animation: slideInRight 0.25s ease both; }
-.animate-fade-up        { animation: fadeUp       0.3s  ease both; }
-.animate-skeleton       { animation: skeletonPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
 /* ─── Typing indicator dots ──────────────────────────────────────────────────── */
 .typing-dot {
   width: 7px; height: 7px;
-  background: rgba(255,255,255,0.9);
+  background: rgba(0, 0, 0, 0.4); 
   border-radius: 50%;
   display: inline-block;
   animation: typingBounce 1.4s infinite ease-in-out;

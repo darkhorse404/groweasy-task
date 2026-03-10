@@ -17,86 +17,84 @@ export default function AdminInsights() {
   const invalidCount = sessions.filter(s => s.classification.status === 'Invalid').length;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflowY: 'auto', background: 'var(--bg-app)' }}>
+    <div className="flex flex-col h-screen overflow-y-auto bg-slate-50 relative w-full">
       {/* ── Header ── */}
-      <header style={{
-        background: '#fff', borderBottom: '1px solid var(--border)',
-        padding: '24px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        position: 'sticky', top: 0, zIndex: 10
-      }}>
+      <header className="bg-white border-b border-slate-200 py-4 md:py-6 px-6 md:px-8 flex items-center justify-between sticky top-0 z-10 pr-16 md:pr-8">
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--primary-dark)', margin: '0 0 4px 0' }}>Admin Insights</h1>
-          <p style={{ color: 'var(--text-mid)', fontSize: '14px', margin: 0 }}>Review completely qualified leads and extracted telemetry.</p>
+          <h1 className="text-xl md:text-2xl font-extrabold text-primary-dark m-0 mb-1">Admin Insights</h1>
+          <p className="text-slate-500 text-xs md:text-sm m-0 font-medium">Review completely qualified leads and extracted telemetry.</p>
         </div>
       </header>
 
-      <div style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
+      <div className="p-4 md:p-8 flex flex-col gap-8 w-full">
         
         {/* ── Overview Cards ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
-          <StatCard title="Total Leads Tested" value={total} icon={Users} color="var(--primary)" bg="var(--green-50)" />
-          <StatCard title="Hot Leads" value={hotCount} icon={Flame} color="var(--hot)" bg="#fef2f2" />
-          <StatCard title="Cold Leads" value={coldCount} icon={Snowflake} color="var(--blue-500)" bg="#eff6ff" />
-          <StatCard title="Invalid / SPAM" value={invalidCount} icon={AlertOctagon} color="var(--invalid)" bg="#fef3c7" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+          <StatCard title="Total Leads Tested" value={total} icon={Users} color="var(--color-primary)" bg="var(--color-primary)/10" />
+          <StatCard title="Hot Leads" value={hotCount} icon={Flame} color="var(--color-hot)" bg="var(--color-hot)/10" />
+          <StatCard title="Cold Leads" value={coldCount} icon={Snowflake} color="var(--color-cold)" bg="var(--color-cold)/10" />
+          <StatCard title="Invalid" value={invalidCount} icon={AlertOctagon} color="var(--color-invalid)" bg="var(--color-invalid)/10" />
         </div>
 
         {/* ── Global Sessions Grid ── */}
-        <div>
-          <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-dark)', marginBottom: '16px' }}>Lead Qualification Log</h2>
+        <div className="w-full">
+          <h2 className="text-base font-bold text-slate-800 mb-4">Lead Qualification Log</h2>
           {sessions.length === 0 ? (
-            <div style={{ padding: '48px', textAlign: 'center', background: '#fff', borderRadius: '12px', border: '1px dashed var(--border)' }}>
-              <p style={{ color: 'var(--text-light)', fontWeight: 600 }}>No leads tested yet. Run a session in the Test Environment first.</p>
+            <div className="p-10 md:p-12 text-center bg-white rounded-xl border border-dashed border-slate-300">
+              <p className="text-slate-400 font-semibold text-sm">No leads tested yet. Run a session in the Test Environment first.</p>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '16px' }}>
+            <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-4 w-full">
               {sessions.map((s, idx) => (
                 <div key={idx} style={{
                   background: '#fff', padding: '20px', borderRadius: '12px',
                   border: '1px solid var(--border)', boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
                   display: 'flex', flexDirection: 'column', gap: '16px'
                 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div>
-                      <h3 style={{ margin: '0 0 4px 0', fontSize: '15px', fontWeight: 700, color: 'var(--text-dark)' }}>
-                        {s.leadInfo.name || 'Anonymous Lead'}
-                      </h3>
-                      <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-light)', fontWeight: 500 }}>
-                        {new Date(s.date).toLocaleString()} • {s.leadInfo.source || 'Direct'}
-                      </p>
+                  <div className="flex flex-col">
+                    <h3 style={{ margin: '0 0 4px 0', fontSize: '15px', fontWeight: 700, color: 'var(--text-dark)' }}>
+                      {s.leadInfo.name || 'Anonymous Lead'}
+                    </h3>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className={`
+                        px-2.5 py-1 rounded font-bold text-[11px] border
+                        ${s.classification.status === 'Hot' ? 'bg-hot/10 text-hot border-hot/20' : 
+                          s.classification.status === 'Cold' ? 'bg-cold/10 text-cold border-cold/20' : 
+                          'bg-invalid/10 text-invalid border-invalid/20'}
+                      `}>
+                        {s.classification.status.toUpperCase()}
+                      </span>
+                      <span className="text-[11px] text-slate-400 font-semibold">
+                        {new Date(s.date).toLocaleString()}
+                      </span>
                     </div>
-                    <span style={{
-                      background: s.classification.status === 'Hot' ? '#fecaca' : s.classification.status === 'Cold' ? '#cbd5e1' : '#fde68a',
-                      color: s.classification.status === 'Hot' ? '#991b1b' : s.classification.status === 'Cold' ? '#334155' : '#92400e',
-                      padding: '4px 10px', borderRadius: '12px', fontWeight: 800, fontSize: '11px'
-                    }}>
-                      {s.classification.status}
-                    </span>
+                    <p style={{ fontSize: '13px', color: 'var(--text-mid)', lineHeight: 1.5, flex: 1 }}>
+                      "{s.classification.summary}"
+                    </p>
                   </div>
 
-                  <p style={{ fontSize: '13px', color: 'var(--text-mid)', lineHeight: 1.5, flex: 1 }}>
-                    "{s.classification.summary}"
-                  </p>
+                  <div className="flex flex-col gap-2 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500 w-24 shrink-0">Source:</span>
+                      <span className="text-slate-900 font-medium">{s.leadInfo.source || 'Website'}</span>
+                    </div>
+                  </div>
 
-                  <div className="mono-font" style={{
-                    background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid var(--border)',
-                    fontSize: '11px', display: 'flex', flexDirection: 'column', gap: '6px'
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: 'var(--text-light)' }}>budget:</span>
-                      <span style={{ color: 'var(--primary-dark)', fontWeight: 600 }}>{s.classification.extractedMetadata.budget || 'null'}</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: 'var(--text-light)' }}>timeline:</span>
-                      <span style={{ color: 'var(--primary-dark)', fontWeight: 600 }}>{s.classification.extractedMetadata.timeline || 'null'}</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: 'var(--text-light)' }}>propertyType:</span>
-                      <span style={{ color: 'var(--primary-dark)', fontWeight: 600 }}>{s.classification.extractedMetadata.propertyType || 'null'}</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: 'var(--text-light)' }}>purpose:</span>
-                      <span style={{ color: 'var(--primary-dark)', fontWeight: 600 }}>{s.classification.extractedMetadata.purpose || 'null'}</span>
-                    </div>
+                  <div className="h-px bg-slate-100 my-4" />
+
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <span className="text-[11px] font-bold text-primary-dark uppercase tracking-widest">Metadata</span>
+                  </div>
+                  
+                  <div className="flex flex-col gap-1.5">
+                    {Object.entries(s.classification.extractedMetadata).map(([k, v]) => (
+                      <div key={k} className="flex justify-between items-center text-xs">
+                        <span className="text-slate-500">{k}</span>
+                        <span className={`mono-font font-semibold ${v ? 'text-primary' : 'text-slate-400'}`}>
+                          {v || 'null'}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               ))}
