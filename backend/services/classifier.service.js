@@ -70,7 +70,7 @@ async function classifyLead(history, invalidReason = null) {
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.1-flash-lite-preview',
       contents: classificationPrompt,
       config: {
         systemInstruction: `You are a lead qualification analyst for a Real Estate company. Analyze the conversation between a sales agent and a lead, and classify it based on the criteria.

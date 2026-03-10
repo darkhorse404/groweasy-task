@@ -1,20 +1,24 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
+import Sidebar from "../components/Sidebar";
 import "./globals.css";
 
-const geist = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
-  title: "Lead Qualifier — AI WhatsApp Bot",
-  description:
-    "An AI-driven lead qualification chatbot that simulates WhatsApp conversations, extracts metadata, and classifies leads as Hot, Cold, or Invalid.",
+  title: "AI Command Center — Lead Qualification",
+  description: "Advanced Developer Dashboard for testing and observing the AI Lead Qualification agent.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" style={{ height: "100%" }}>
-      <body className={`${geist.variable} antialiased`} style={{ height: "100%", margin: 0 }}>
-        {children}
+      <body className={`${inter.variable} ${jetbrainsMono.variable} antialiased`} style={{ height: "100%", margin: 0, display: 'flex' }}>
+        <Sidebar />
+        <main style={{ flex: 1, height: '100%', overflow: 'hidden' }}>
+          {children}
+        </main>
       </body>
     </html>
   );

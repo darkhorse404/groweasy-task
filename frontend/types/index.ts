@@ -1,3 +1,5 @@
+// ─── Shared TypeScript types for the Lead Qualification Chatbot ───────────────
+
 export type MessageRole = 'user' | 'assistant';
 
 export interface Message {
@@ -5,6 +7,7 @@ export interface Message {
   role: MessageRole;
   content: string;
   timestamp: Date;
+  suggestedReplies?: string[];
 }
 
 export interface LeadInfo {
@@ -40,11 +43,13 @@ export interface Classification {
 
 export interface StartResponse {
   message: string;
+  suggested_replies?: string[];
 }
 
 export interface ChattingResponse {
   status: 'chatting';
   message: string;
+  suggested_replies?: string[];
 }
 
 export interface CompletedResponse {

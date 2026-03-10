@@ -5,11 +5,15 @@ const { classifyLead } = require('../services/classifier.service');
 const { isGibberish } = require('../utils/gibberish');
 const config = require('../config.json');
 
+// ─── In-Memory Session Store ───────────────────────────────────────────────────
+// { [sessionId]: { history, leadInfo, configOverrides, turnCount,
+//                  clarificationCount, classification, isEnded } }
 const sessions = {};
 
 const MAX_TURNS = config.conversationStyle?.maxTurns || 10;
 const MAX_CLARIFICATIONS = config.conversationStyle?.clarificationAttempts || 1;
 
+// ─── Helper: Evaluate classification async ─────────────────────────────────────
 async function evaluateSession(session, invalidReason = null) {
   try {
     session.classification = await classifyLead(session.history, invalidReason);
@@ -26,6 +30,11 @@ async function evaluateSession(session, invalidReason = null) {
   }
 }
 
+// ─── 1. POST /api/chat/start ───────────────────────────────────────────────────
+/**
+ * Body: { sessionId: string, config: object, leadInfo: object }
+ * Response: { message: string }
+ */
 router.post('/start', async (req, res) => {
   try {
     const { sessionId, config: configOverrides = {}, leadInfo = {} } = req.body;
@@ -47,6 +56,7 @@ router.post('/start', async (req, res) => {
 
     const session = sessions[sessionId];
 
+    // Build the initial context injected as the first "user" message
     const initialContext = leadInfo.initialMessage?.trim()
       ? `Lead initial message: "${leadInfo.initialMessage}". Please greet them and begin qualifying.`
       : `Lead Name: ${leadInfo.name || 'Anonymous'}. Lead Source: ${leadInfo.source || 'Direct'}. No initial message. Please introduce yourself and start the conversation naturally.`;
@@ -54,10 +64,13 @@ router.post('/start', async (req, res) => {
     session.history.push({ role: 'user', content: initialContext });
 
     try {
-      const assistantReply = await generateChatResponse(session.history, session.configOverrides);
-      session.history.push({ role: 'assistant', content: assistantReply });
+      const gptReply = await generateChatResponse(session.history, session.configOverrides);
+      session.history.push({ role: 'assistant', content: gptReply.ai_message });
 
-      return res.json({ message: assistantReply });
+      return res.json({ 
+        message: gptReply.ai_message,
+        suggested_replies: gptReply.suggested_user_replies
+      });
     } catch (apiError) {
       if (apiError.message.includes('timed out')) {
         return res.status(504).json({ error: 'Sorry, our agent is experiencing high traffic. Please try again.' });
@@ -71,6 +84,13 @@ router.post('/start', async (req, res) => {
   }
 });
 
+// ─── 2. POST /api/chat/send ────────────────────────────────────────────────────
+/**
+ * Body: { sessionId: string, message: string }
+ * Response:
+ *  - Continue:  { status: "chatting", message: string }
+ *  - Concluded: { status: "completed", result: { classification: string, metadata: object, summary: string } }
+ */
 router.post('/send', async (req, res) => {
   try {
     const { sessionId, message } = req.body;
@@ -91,6 +111,7 @@ router.post('/send', async (req, res) => {
 
     const userMessage = message.trim();
 
+    // ── Gibberish Detection (Path B) ───────────────────────────────────────────
     if (isGibberish(userMessage)) {
       if (session.clarificationCount >= MAX_CLARIFICATIONS) {
         session.isEnded = true;
@@ -103,6 +124,7 @@ router.post('/send', async (req, res) => {
         });
       }
 
+      // First time clarifying
       session.clarificationCount++;
       const clarifyReply = "I'm sorry, I didn't quite catch that. Could you clarify your property requirements?";
       session.history.push({ role: 'user', content: userMessage });
@@ -115,9 +137,11 @@ router.post('/send', async (req, res) => {
       });
     }
 
+    // ── Path A: Normal Conversation ────────────────────────────────────────────
     session.history.push({ role: 'user', content: userMessage });
     session.turnCount++;
 
+    // Check Max turns
     if (session.turnCount >= MAX_TURNS) {
       session.isEnded = true;
       const closingFallback = "I have all the details I need. Our team will follow up shortly. Thank you!";
@@ -132,9 +156,11 @@ router.post('/send', async (req, res) => {
 
     try {
       // Call Gemini API
-      const aiResponse = await generateChatResponse(session.history, session.configOverrides);
+      const aiResponseObj = await generateChatResponse(session.history, session.configOverrides);
+      const aiResponseText = aiResponseObj.ai_message;
 
-      if (aiResponse.includes('<END_CONVERSATION>')) {
+      // Path C: End Trigger Detected
+      if (aiResponseText.includes('<END_CONVERSATION>')) {
         session.isEnded = true;
         session.history.push({ role: 'assistant', content: 'Conversation naturally concluded by agent.' });
         await evaluateSession(session);
@@ -146,10 +172,11 @@ router.post('/send', async (req, res) => {
       }
 
       // Continue Path
-      session.history.push({ role: 'assistant', content: aiResponse });
+      session.history.push({ role: 'assistant', content: aiResponseText });
       return res.json({
         status: 'chatting',
-        message: aiResponse,
+        message: aiResponseText,
+        suggested_replies: aiResponseObj.suggested_user_replies
       });
 
     } catch (apiError) {
@@ -165,6 +192,7 @@ router.post('/send', async (req, res) => {
   }
 });
 
+// ─── Debug Routes ──────────────────────────────────────────────────────────────
 router.get('/:sessionId', (req, res) => {
   if (!sessions[req.params.sessionId]) return res.status(404).json({ error: 'Not found' });
   return res.json(sessions[req.params.sessionId]);
